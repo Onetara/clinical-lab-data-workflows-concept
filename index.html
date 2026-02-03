@@ -1,0 +1,342 @@
+<!-- Author: Stacy Toriola | Code Reviewer: Anthony O. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>CLSDW — Clinical Lab & Sample Data Workflows</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Strict CSP, self-only assets -->
+    <meta http-equiv="Content-Security-Policy"
+                content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'none'; form-action 'none'">
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <header class="stcdp-appbar" role="banner" aria-label="Application header">
+        <div class="stcdp-appbar__brand">
+            <span class="stcdp-appbar__logo" aria-hidden="true">🧪</span>
+            <h1 class="stcdp-appbar__title">CLSDW</h1>
+            <div class="stcdp-appbar__subtitle">Clinical Lab & Sample Data Workflows</div>
+        </div>
+        <nav class="stcdp-appbar__nav" aria-label="Lifecycle navigation">
+            <button class="stcdp-tab is-active" data-tab="intake" aria-controls="stcdp-panel-intake">Intake</button>
+            <button class="stcdp-tab" data-tab="editor" aria-controls="stcdp-panel-editor">Editor</button>
+            <button class="stcdp-tab" data-tab="new" aria-controls="stcdp-panel-new">New Entry</button>
+            <button class="stcdp-tab" data-tab="validate" aria-controls="stcdp-panel-validate">Validate</button>
+            <button class="stcdp-tab" data-tab="process" aria-controls="stcdp-panel-process">Process</button>
+            <button class="stcdp-tab" data-tab="reconcile" aria-controls="stcdp-panel-reconcile">Reconcile</button>
+            <button class="stcdp-tab" data-tab="audit" aria-controls="stcdp-panel-audit">Audit</button>
+            <button class="stcdp-tab" data-tab="dashboard" aria-controls="stcdp-panel-dashboard">Dashboard</button>
+            <button class="stcdp-tab" data-tab="playbooks" aria-controls="stcdp-panel-playbooks">Playbooks</button>
+        </nav>
+    </header>
+
+    <main class="stcdp-main" role="main">
+        <!-- Intake -->
+        <section id="stcdp-panel-intake" class="stcdp-panel" aria-labelledby="intake">
+            <div class="stcdp-card">
+                <h2>Intake</h2>
+                <p class="stcdp-help">
+                    Paste clinical JSON or XML (no external dependencies). Examples create patient/sample records.
+                </p>
+                <div class="stcdp-row">
+                    <fieldset class="stcdp-fieldset">
+                        <legend>Input Format</legend>
+                        <label class="stcdp-radio"><input type="radio" name="format" value="json" checked> JSON</label>
+                        <label class="stcdp-radio"><input type="radio" name="format" value="xml"> XML</label>
+                    </fieldset>
+                    <div class="stcdp-actions">
+                        <button id="btnLoadJson" type="button" class="stcdp-btn">Load Example JSON</button>
+                        <button id="btnLoadXml" type="button" class="stcdp-btn">Load Example XML</button>
+                        <button id="btnClear" type="button" class="stcdp-btn stcdp-btn--ghost">Clear</button>
+                    </div>
+                </div>
+                <label for="inputData" class="stcdp-label">Input Data</label>
+                <textarea id="inputData" class="stcdp-textarea" rows="12" spellcheck="false"
+                    placeholder='Paste JSON array of samples or XML &lt;samples&gt;...&lt;/samples&gt;'>
+                </textarea>
+                <div class="stcdp-actions">
+                    <button id="btnIntake" type="button" class="stcdp-btn stcdp-btn--primary">Intake & Validate</button>
+                </div>
+                <div id="intakeSummary" class="stcdp-summary" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- Editor (new) -->
+        <section id="stcdp-panel-editor" class="stcdp-panel stcdp-hidden" aria-labelledby="editor">
+            <div class="stcdp-card">
+                <h2>Editor — Loaded JSON/XML</h2>
+                <p>Edit the current dataset as raw JSON or XML, or load a file from disk. Apply to re-validate and refresh all views.</p>
+
+                <div class="stcdp-row">
+                    <fieldset class="stcdp-fieldset">
+                        <legend>Editor Format</legend>
+                        <label class="stcdp-radio"><input type="radio" name="editorFormat" value="json" checked> JSON</label>
+                        <label class="stcdp-radio"><input type="radio" name="editorFormat" value="xml"> XML</label>
+                    </fieldset>
+
+                    <input id="filePicker" class="stcdp-input" type="file" accept=".json,.xml" aria-label="Open a JSON or XML file" />
+                    <div class="stcdp-actions">
+                        <button id="btnShowCurrent" type="button" class="stcdp-btn">Show Current</button>
+                        <button id="btnBeautify" type="button" class="stcdp-btn">Beautify</button>
+                        <button id="btnApplyEditor" type="button" class="stcdp-btn stcdp-btn--primary">Apply Changes</button>
+                        <button id="btnDownloadCurrent" type="button" class="stcdp-btn">Download</button>
+                    </div>
+                </div>
+
+                <label for="editorText" class="stcdp-label">Editor</label>
+                <textarea id="editorText" class="stcdp-textarea" rows="16" spellcheck="false"
+                    placeholder="Edit JSON array or &lt;samples&gt;...&lt;/samples&gt;"></textarea>
+
+                <div id="editorSummary" class="stcdp-summary" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- New Entry (new) -->
+        <section id="stcdp-panel-new" class="stcdp-panel stcdp-hidden" aria-labelledby="new">
+            <div class="stcdp-card">
+                <h2>New Clinical Sample Entry</h2>
+                <p>Add a new sample to the current dataset (then re-validate). Date-time should be ISO-8601; use the picker below and we’ll convert.</p>
+
+                <div class="stcdp-grid">
+                    <div>
+                        <label class="stcdp-label" for="newId">ID</label>
+                        <input id="newId" class="stcdp-input" placeholder="SMP-3001" />
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newPatientId">Patient ID</label>
+                        <input id="newPatientId" class="stcdp-input" placeholder="PAT-101" />
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newSpecimen">Specimen Type</label>
+                        <select id="newSpecimen" class="stcdp-input">
+                            <option>BLOOD</option>
+                            <option>URINE</option>
+                            <option>SWAB</option>
+                            <option>SALIVA</option>
+                            <option>PLASMA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newStatus">Status</label>
+                        <select id="newStatus" class="stcdp-input">
+                            <option>RECEIVED</option>
+                            <option>IN_PROGRESS</option>
+                            <option>REPORTED</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newValue">Value</label>
+                        <input id="newValue" type="number" step="0.0001" class="stcdp-input" placeholder="85.2" />
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newUnit">Unit</label>
+                        <select id="newUnit" class="stcdp-input">
+                            <option>MG/DL</option>
+                            <option>MMOL/L</option>
+                            <option>IU/L</option>
+                            <option>CELLS/µL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newCollected">Collected At</label>
+                        <input id="newCollected" type="datetime-local" class="stcdp-input" />
+                    </div>
+                    <div>
+                        <label class="stcdp-label" for="newAccession">Accession</label>
+                        <input id="newAccession" class="stcdp-input" placeholder="ACC-2026-0301" />
+                    </div>
+                </div>
+
+                <div class="stcdp-actions" style="margin-top:10px;">
+                    <button id="btnAddNew" type="button" class="stcdp-btn stcdp-btn--primary">Add & Validate</button>
+                </div>
+
+                <div id="newSummary" class="stcdp-summary" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- Validate -->
+        <section id="stcdp-panel-validate" class="stcdp-panel stcdp-hidden" aria-labelledby="validate">
+            <div class="stcdp-card">
+                <h2>Validation Results</h2>
+                <div class="stcdp-grid">
+                    <div class="stcdp-kpi">
+                        <div class="stcdp-kpi__label">Total</div>
+                        <div id="kpiTotal" class="stcdp-kpi__value">0</div>
+                    </div>
+                    <div class="stcdp-kpi">
+                        <div class="stcdp-kpi__label">Valid</div>
+                        <div id="kpiValid" class="stcdp-kpi__value stcdp-ok">0</div>
+                    </div>
+                    <div class="stcdp-kpi">
+                        <div class="stcdp-kpi__label">Errors</div>
+                        <div id="kpiErrors" class="stcdp-kpi__value stcdp-bad">0</div>
+                    </div>
+                    <div class="stcdp-kpi">
+                        <div class="stcdp-kpi__label">Quarantined</div>
+                        <div id="kpiQuarantine" class="stcdp-kpi__value stcdp-warn">0</div>
+                    </div>
+                </div>
+
+                <details class="stcdp-details">
+                    <summary>Error Details</summary>
+                    <div class="stcdp-tablewrap">
+                        <table class="stcdp-table" aria-label="Validation errors">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Record ID</th><th>Code</th><th>Message</th><th>Field</th><th>Fix</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblErrors"></tbody>
+                        </table>
+                    </div>
+                </details>
+
+                <details class="stcdp-details">
+                    <summary>Quarantine</summary>
+                    <div class="stcdp-tablewrap">
+                        <table class="stcdp-table" aria-label="Quarantined records">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Record ID</th><th>Reason</th><th>Sample</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblQuarantine"></tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Process -->
+        <section id="stcdp-panel-process" class="stcdp-panel stcdp-hidden" aria-labelledby="process">
+            <div class="stcdp-card">
+                <h2>Process</h2>
+                <p>Transform/enrich valid samples. CRC32 is recomputed after transformation for provenance.</p>
+                <div class="stcdp-actions">
+                    <button id="btnProcess" type="button" class="stcdp-btn stcdp-btn--primary">Process Valid Records</button>
+                </div>
+                <div id="processSummary" class="stcdp-summary" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- Reconcile -->
+        <section id="stcdp-panel-reconcile" class="stcdp-panel stcdp-hidden" aria-labelledby="reconcile">
+            <div class="stcdp-card">
+                <h2>Reconciliation</h2>
+                <p>Simulated downstream ACKs (e.g., LIS/LIMS acks) with SLA enforcement (configurable threshold).</p>
+                <div class="stcdp-row">
+                    <label class="stcdp-label" for="slaMs">SLA Threshold (ms)</label>
+                    <input id="slaMs" class="stcdp-input" type="number" value="1500" min="100" step="100" />
+                    <button id="btnReconcile" type="button" class="stcdp-btn stcdp-btn--primary">Run Reconciliation</button>
+                </div>
+
+                <div class="stcdp-grid">
+                    <div class="stcdp-kpi"><div class="stcdp-kpi__label">ACKed</div><div id="kpiAck" class="stcdp-kpi__value stcdp-ok">0</div></div>
+                    <div class="stcdp-kpi"><div class="stcdp-kpi__label">SLA Breaches</div><div id="kpiSla" class="stcdp-kpi__value stcdp-bad">0</div></div>
+                </div>
+
+                <details class="stcdp-details">
+                    <summary>ACK Details</summary>
+                    <div class="stcdp-tablewrap">
+                        <table class="stcdp-table" aria-label="Reconciliation acks">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Record ID</th><th>Status</th><th>ACK Code</th><th>Delay (ms)</th><th>SLA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblAcks"></tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Audit -->
+        <section id="stcdp-panel-audit" class="stcdp-panel stcdp-hidden" aria-labelledby="audit">
+            <div class="stcdp-card">
+                <h2>Audit & Provenance</h2>
+                <p>End-to-end activity with CRC32 checksums and run IDs. Export as CSV or copy JSON.</p>
+                <div class="stcdp-actions">
+                    <button id="btnExportAudit" type="button" class="stcdp-btn">Export Audit CSV</button>
+                    <button id="btnCopyAudit" type="button" class="stcdp-btn stcdp-btn--ghost">Copy Audit as JSON</button>
+                </div>
+                <div class="stcdp-tablewrap">
+                    <table class="stcdp-table" aria-label="Audit log">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>Time</th><th>Run ID</th><th>Stage</th><th>Record ID</th><th>Status</th><th>CRC32</th><th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblAudit"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard -->
+        <section id="stcdp-panel-dashboard" class="stcdp-panel stcdp-hidden" aria-labelledby="dashboard">
+            <div class="stcdp-card clsdw-dashboard-card">
+                <h2>Alerts & Dashboard</h2>
+
+                <div class="stcdp-row" style="justify-content: space-between; align-items: center;">
+                    <div class="stcdp-actions">
+                        <label class="stcdp-label" style="display:inline-flex; align-items:center; gap:8px;">
+                            <input id="toggleDashAnim" type="checkbox" checked />
+                            Enable dashboard background animation
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Animated background host -->
+                <div id="dashboardAnimHost" class="clsdw-dash-anim is-animated" aria-hidden="true"></div>
+
+                <div class="stcdp-grid stcdp-grid--cards">
+                    <div class="stcdp-card stcdp-card--tile clsdw-hover-tilt">
+                        <div class="stcdp-card__title">Error Rate</div>
+                        <div id="metricErrorRate" class="stcdp-metric">0%</div>
+                    </div>
+                    <div class="stcdp-card stcdp-card--tile clsdw-hover-tilt">
+                        <div class="stcdp-card__title">SLA Breach Rate</div>
+                        <div id="metricSlaRate" class="stcdp-metric">0%</div>
+                    </div>
+                    <div class="stcdp-card stcdp-card--tile clsdw-hover-tilt">
+                        <div class="stcdp-card__title">Quarantine Size</div>
+                        <div id="metricQuarantine" class="stcdp-metric">0</div>
+                    </div>
+                    <div class="stcdp-card stcdp-card--tile clsdw-hover-tilt">
+                        <div class="stcdp-card__title">Throughput (records)</div>
+                        <div id="metricThroughput" class="stcdp-metric">0</div>
+                    </div>
+                </div>
+
+                <div class="stcdp-charts">
+                    <figure>
+                        <figcaption>Error Categories</figcaption>
+                        <canvas id="chartErrors" width="520" height="220" aria-label="Error category bars"></canvas>
+                    </figure>
+                    <figure>
+                        <figcaption>ACK Delay Distribution</figcaption>
+                        <canvas id="chartAckDelays" width="520" height="220" aria-label="Ack delay histogram"></canvas>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- Playbooks -->
+        <section id="stcdp-panel-playbooks" class="stcdp-panel stcdp-hidden" aria-labelledby="playbooks">
+            <div class="stcdp-card">
+                <h2>Troubleshooting Playbooks</h2>
+                <p>Click an error code in the Validation table to jump here with the right playbook expanded.</p>
+                <div id="playbookList" class="stcdp-playbooks" role="list"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="stcdp-footer" role="contentinfo">
+        <small>© <span id="year"></span> Stacy Toriola. CLSDW — Clinical Lab & Sample Data Workflows.</small>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
