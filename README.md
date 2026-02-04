@@ -3,15 +3,12 @@ CLSDW—Clinical Lab &amp; Data Workflows—is a concept coded by Stacy T. that 
 ## Dashboard Overview
 ![CLSDW Clinical Lab Overview](images/dashboar.png)
 
-## QC Flags Example
-![QC Flags](images/qc_flags.png)
-
 ## Reconciliation/ SLA Breach Status
 ![SLA Breach](images/reconcile.png)
 
 ## Validation Result
 ![Result Validation](images/validation.png)
 
-## Validation Result
-![Troubleshooting Index](images/troubleshoot.png)
+## Troubleshoot Index
+![Troubleshoot Index](images/troubleshoot.png)
 
